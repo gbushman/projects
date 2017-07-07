@@ -1,0 +1,45 @@
+---
+output: html_document
+---
+
+```{r, warning = F, message = F, echo = F}
+# libraries
+library(leaflet)
+library(stringr)
+library(sf)
+library(tidyverse)
+library(tidycensus)
+
+# census data
+census_api_key("api key")
+
+mi_pop <- get_acs(geography = "tract", 
+                     variables = c("B17006_001", "B17006_002"), 
+                     state = "MI",
+                     output = "wide",
+                     geometry = TRUE) %>%
+  mutate(estimate = B17006_002E/B17006_001E*100) %>%
+  filter(!is.na(estimate))
+
+pal <- colorNumeric(palette = "viridis", 
+                    domain = mi_pop$estimate)
+
+# leaflet map
+map <- mi_pop %>%
+  st_transform(crs = "+init=epsg:4326") %>%
+  leaflet(width = "500", height = "500") %>%
+  addProviderTiles(provider = "CartoDB.Positron") %>%
+  addPolygons(popup = ~ str_extract(NAME, "^([^,]*)"),
+              stroke = FALSE,
+              smoothFactor = 0,
+              fillOpacity = 0.5,
+              color = ~ pal(estimate)) %>%
+  addLegend("bottomright", 
+            pal = pal, 
+            values = ~ estimate,
+            title = "% Child Poverty",
+            opacity = 1)
+
+# output
+map
+```
