@@ -1,0 +1,137 @@
+---
+title: "GIS Final Project"
+output: word_document
+---
+
+# load packages
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+```
+
+# clean up 911 calls data
+
+```{r}
+# read in data
+calls <- read.csv("D:/Documents/Winter 2017/GIS/Final Project/Data/911 Calls/911CallsBaltimore.csv")
+
+# separate calldatetime into two columns
+calls_tdy <- calls %>%
+  separate(callDateTime, into = c("call_date", "call_time"), sep = " ", extra = "merge")
+
+# convert call date column to date format
+calls_tdy$call_date <- as.Date(calls_tdy$call_date, format = "%m/%d/%Y")
+
+# filter to 2015
+calls_tdy <- calls_tdy %>%
+  filter(year(call_date) == 2015) %>%
+  arrange(call_date)
+
+# filter by priority
+calls_tdy <- calls_tdy %>%
+  filter(priority == "Emergency" | 
+         priority == "High" |
+         priority == "Medium")
+
+# separate location field into two columns
+calls_tdy <- calls_tdy %>%
+  separate(location, into = c("latitude", "longitude"), sep = ",")
+
+calls_tdy$latitude <- gsub("\\(", "", calls_tdy$latitude)
+
+calls_tdy$longitude <- gsub("\\)", "", calls_tdy$longitude)
+
+# filter out calls with no attached location
+calls_tdy <- calls_tdy %>%
+  filter(latitude != "")
+
+calls_tdy_sample <- calls_tdy[sample(1:nrow(calls_tdy), 10000),]
+
+# write out data
+write.csv(calls_tdy_sample, "D:/Documents/Winter 2017/GIS/Final Project/Data/911 Calls/CallsBaltimore_2015_sample.csv", row.names = F)
+```
+
+# census data
+
+```{r}
+# read in data
+census <- read.csv("C:/Users/Greg/Documents/Winter 2017/GIS/Final Project/Data/Census/BaltCensusTracts.csv")
+
+# make new column
+census <- census %>%
+  mutate(Pct_White = Total_White_Pop/Total_Pop) %>%
+  mutate(RacEcon_Index = Pct_White * Median_Income) %>%
+  mutate(RacEcon_Index_Z = scale(RacEcon_Index, center = T, scale = T))
+
+# write out data
+write.csv(census, "C:/Users/Greg/Documents/Winter 2017/GIS/Final Project/Data/Census/BaltCensusTracts.csv", row.names = F)
+```
+
+# clean up arrests data
+
+```{r}
+arrests <- read.csv("D:/Documents/Winter 2017/GIS/Final Project/Data/Arrests/BPD_Arrests.csv")
+
+# separate calldatetime into two columns
+arrests <- arrests %>%
+  separate(ArrestDate, into = c("month", "day", "year"), sep = "/", extra = "merge")
+
+# filter to 2015
+arrests <- arrests %>%
+  filter(year == 2015)
+
+# separate location field into two columns
+arrests <- arrests %>%
+  separate(Location.1, into = c("latitude", "longitude"), sep = ",")
+
+arrests$latitude <- gsub("\\(", "", arrests$latitude)
+
+arrests$longitude <- gsub("\\)", "", arrests$longitude)
+
+# filter out calls with no attached location
+arrests <- arrests %>%
+  filter(latitude != "")
+
+write.csv(arrests, "D:/Documents/Winter 2017/GIS/Final Project/Data/Arrests/Arrests_2015.csv")
+```
+
+# separate violent and non-violent crimes
+
+```{r}
+arrests$IncidentOffense <- tolower(arrests$IncidentOffense)
+arrests$ChargeDescription <- tolower(arrests$ChargeDescription)
+
+arrests$IncidentOffense <- trimws(arrests$IncidentOffense)
+
+arrests$IncidentOffense <- gsub(" ", "", arrests$IncidentOffense)
+arrests$ChargeDescription <- gsub(" ", "", arrests$ChargeDescription)
+
+arrests$violent_desc <- grepl("ass|rob|murd|homo|fire|armed|arson|viol|burg|shoot|rape", arrests$ChargeDescription)
+
+arrests_viol <- arrests %>% 
+  filter(violent_desc == T) %>%
+  select(Arrest, Age, Sex, Race, day, month, year, ChargeDescription, latitude, longitude, Neighborhood)
+
+arrests_nonviol <- arrests %>%
+  filter(violent_desc == F) %>%
+  select(Arrest, Age, Sex, Race, day, month, year, ChargeDescription, latitude, longitude, Neighborhood)
+
+write.csv(arrests_viol, "D:/Documents/Winter 2017/GIS/Final Project/Data/Arrests/Arrests_2015_viol.csv")
+write.csv(arrests_nonviol, "D:/Documents/Winter 2017/GIS/Final Project/Data/Arrests/Arrests_2015_nonviol.csv")
+```
+
+# analyzing relationships
+
+```{r}
+df <- read.csv("D:/Documents/Winter 2017/GIS/Final Project/Data/GISData.txt")
+
+df <- df %>%
+  rename("arrests" = Join_Count,
+         "emxcalls" = Join_Count_1)
+
+ggplot(df, aes(BaltCensusTracts_csv_Pct_White)) + geom_density() + theme_minimal() + labs(y = "Density", x = "% White")
+
+ggplot(df, aes(BaltCensusTracts_csv_Median_Income)) + geom_density() + theme_minimal() + labs(y = "Density", x = "Median Income")
+```
