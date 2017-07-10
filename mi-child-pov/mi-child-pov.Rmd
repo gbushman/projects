@@ -2,7 +2,7 @@
 output: html_document
 ---
 
-```{r, warning = F, message = F, echo = F}
+```{r setup}
 # libraries
 library(leaflet)
 library(stringr)
@@ -23,7 +23,9 @@ mi_pop <- get_acs(geography = "tract",
 
 pal <- colorNumeric(palette = "viridis", 
                     domain = mi_pop$estimate)
+```
 
+```{r map}
 # leaflet map
 map <- mi_pop %>%
   st_transform(crs = "+init=epsg:4326") %>%
@@ -42,4 +44,24 @@ map <- mi_pop %>%
 
 # output
 map
+```
+
+```{r hc}
+# highchart
+hc <- hchart(mi_pop, 
+             "scatter", 
+             hcaes(x      = child_pop, 
+                   y      = estimate, 
+                   size   = child_pov,
+                   color  = estimate,
+                   county = NAME), 
+             name = "County:") %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_xAxis(title = list(text = "Child Population")) %>%
+  hc_yAxis(title = list(text = "% Child Poverty")) %>%
+  hc_tooltip(pointFormat = "<b>{point.county}<b>")%>%
+  hc_size(width = 600, height = 500)
+
+# output
+hc
 ```
