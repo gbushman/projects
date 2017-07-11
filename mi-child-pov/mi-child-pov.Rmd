@@ -5,6 +5,7 @@ output: html_document
 ```{r setup}
 # libraries
 library(leaflet)
+library(highcharter)
 library(stringr)
 library(sf)
 library(tidyverse)
