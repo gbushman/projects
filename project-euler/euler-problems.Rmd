@@ -1,0 +1,43 @@
+---
+title: "Project Euler Problems"
+output: word_document
+---
+
+# Problem 3: Largest Prime Factor
+```{r p-3}
+library(gmp)
+factors <- factorize(600851475143)
+```
+
+# Problem 2: Even Fibonacci Numbers
+```{r p-2}
+fib <- c(1, 1)
+
+while (sum(tail(fib, n = 2)) < 4000000) {
+  fib <- c(fib, sum(tail(fib, n = 2)))
+}
+
+sum <- 0
+
+for (n in fib) {
+  if(n %% 2 == 0){
+    sum <- sum + n
+  }
+  sum
+}
+
+print(sum)
+```
+
+# Problem 1: Multiples of 3 and 5
+```{r p-1}
+m = 0
+
+for (n in 1:999){
+  if(n %% 3 == 0 | n %% 5 == 0){
+    m = m + n
+  }
+}
+
+print(m)
+```
