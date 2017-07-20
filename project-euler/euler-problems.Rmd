@@ -3,9 +3,46 @@ title: "Project Euler Problems"
 output: word_document
 ---
 
+# Problem 4: Largest Palindrome Product
+```{r p-4}
+library(dplyr)
+library(magrittr)
+
+f2 <- 999
+f1 <- c(100:999)
+master <- data.frame(f1 = 0, prod = 0, f2 = 0, rev = 0, pal = FALSE)
+
+while(f2 > 99){
+  prod  <- f1 * f2
+  df    <- cbind(f1, prod) %>% data.frame()
+  df$f2 <- f2
+  
+  df$prod <- as.character(df$prod)
+  
+  for (i in 1:nrow(df)) {
+    df$rev[i] = paste(rev(substring(prod[i],1:nchar(prod[i]),1:nchar(prod[i]))),collapse="")
+  }
+  
+  df <- df %>%
+    mutate(pal  = ifelse(prod == rev, TRUE, FALSE),
+           prod = as.numeric(prod),
+           rev  = as.numeric(rev)) %>%
+    filter(pal == TRUE)
+  
+  master <- rbind(master, df)
+  
+  f2 = f2 - 1
+}
+
+master %>%
+  filter(pal == TRUE) %$%
+  max(rev)
+```
+
 # Problem 3: Largest Prime Factor
 ```{r p-3}
 library(gmp)
+
 factors <- factorize(600851475143)
 ```
 
